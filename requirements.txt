@@ -1,0 +1,8 @@
+google-genai
+groq
+feedparser
+yt-dlp
+requests
+python-dotenv
+Pillow
+ffmpeg-python
