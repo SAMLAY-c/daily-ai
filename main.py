@@ -81,11 +81,11 @@ def main():
         # 4. Gemini 智能分析
         print("   🧠 Gemini 正在分析...")
         source_type = "video" if is_video else "article"
-        analysis_result = gemini_agent.analyze_content(full_content, source_type)
+        analysis_result = gemini_agent.analyze_content(full_content, source_type, entry.link)
 
         # 5. 推送飞书
         print("   📤 推送到飞书...")
-        feishu_pusher.push_record(entry, analysis_result)
+        feishu_pusher.push_record(entry, analysis_result, full_content if is_video else None)
 
         # 6. 更新历史记录
         rss_manager.update_history(rss_url, video_id, title)

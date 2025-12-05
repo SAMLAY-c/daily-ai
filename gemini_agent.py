@@ -13,17 +13,20 @@ class GeminiAgent:
             raise ValueError("❌ 未设置 GOOGLE_API_KEY")
         self.client = genai.Client(api_key=api_key)
 
-    def analyze_content(self, text_content, source_type="video"):
+    def analyze_content(self, text_content, source_type="video", original_link=""):
         """
         使用 Gemini 分析文本内容并返回 JSON
         :param text_content: 视频转录文本或文章内容
         :param source_type: video 或 article
+        :param original_link: 原始链接地址
         """
         current_date = os.getenv("CURRENT_DATE", "今天")
 
         # 核心 Prompt：要求严格的 JSON 格式
         prompt = f"""
         你是一位科技与商业洞察专家。请分析以下{source_type}的内容。
+
+        原始链接：{original_link}
         内容：
         {text_content[:30000]}  # 截取前3万字符防止超长
 
@@ -31,7 +34,7 @@ class GeminiAgent:
         {{
             "基础元数据": {{
                 "新闻标题": "内容的完整标题",
-                "原文链接": "原始出处链接",
+                "原文链接": "{original_link}",  # 直接使用提供的原始链接，不要从内容中提取
                 "来源渠道": "选择一个：Twitter / GitHub / Arxiv / HuggingFace / 微信公众号 / 官方博客 / YouTube / Bilibili / 其他",
                 "作者账号": "关键KOL或机构名称",
                 "发布日期": "内容的原始发布时间（yyyy/MM/dd格式，如果无法确定填今天）"

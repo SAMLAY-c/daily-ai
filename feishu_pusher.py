@@ -45,10 +45,11 @@ class FeishuPusher:
         except:
             return "⭐"
 
-    def push_record(self, raw_data, ai_analysis):
+    def push_record(self, raw_data, ai_analysis, original_transcript=None):
         """
         raw_data: RSS原始数据 (title, link, published_parsed)
         ai_analysis: Gemini 返回的 JSON 数据
+        original_transcript: 原始转录内容（完整文本）
         """
         token = self.get_tenant_token()
         if not token: return
@@ -56,14 +57,7 @@ class FeishuPusher:
         url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{self.table_id}/records"
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-        # 时间戳处理 - 处理RSS的发布时间和当前收藏时间
-        import datetime
-        pub_date_str = raw_data.get('published_parsed')
-        if pub_date_str:
-            pub_timestamp = int(time.mktime(pub_date_str) * 1000)
-        else:
-            pub_timestamp = int(time.time() * 1000)
-
+        # 时间戳处理 - 处理当前收藏时间
         collect_timestamp = int(time.time() * 1000)
 
         # 从AI分析结果中提取结构化数据
@@ -71,14 +65,20 @@ class FeishuPusher:
         tech_data = ai_analysis.get('技术与属性', {})
         analysis_data = ai_analysis.get('AI深度分析', {})
 
+        # 优先使用RSS原始链接，而不是AI分析的链接
+        original_link = raw_data.get('link', '')
+        ai_link = meta_data.get('原文链接', '')
+        final_link = ai_link if ai_link and ai_link != '无' else original_link
+
         # ⚠️ 关键：这里的 Key 必须和你的飞书多维表格列名完全一致
         fields = {
             # === 基础元数据 (Meta Info) ===
             "新闻标题": meta_data.get('新闻标题', raw_data.get('title', '无标题')),
-            "原文链接": meta_data.get('原文链接', raw_data.get('link', '')),
+            "原文链接": {
+                "link": final_link,
+                "text": "点击查看原文"
+            } if final_link else None,
             "来源渠道": meta_data.get('来源渠道', '其他'),
-            "作者账号": meta_data.get('作者账号', ''),
-            "发布日期": pub_timestamp,
             "收藏日期": collect_timestamp,
 
             # === 技术与属性 (Tech & Attributes) ===
@@ -91,16 +91,21 @@ class FeishuPusher:
             "核心亮点": analysis_data.get('核心亮点', ''),
             "模式创新": analysis_data.get('模式创新', ''),
             "商业潜力": self.convert_to_stars(analysis_data.get('商业潜力', '⭐')),
-            "完整转录": analysis_data.get('完整转录', '')[:2000], # 限制长度防止溢出
-            "AI对话分析": analysis_data.get('AI对话分析', '')
+            "完整转录": original_transcript[:5000] if original_transcript else '', # 原始完整转录内容，限制长度防止溢出
+            "AI对话分析": analysis_data.get('AI对话分析', '') # AI的分析结果
         }
 
+        # 清理 None 值，飞书不接受 None
+        clean_fields = {k: v for k, v in fields.items() if v is not None}
+
         try:
-            resp = requests.post(url, headers=headers, json={"fields": fields})
+            resp = requests.post(url, headers=headers, json={"fields": clean_fields})
             res_json = resp.json()
             if res_json.get('code') == 0:
                 print(f"   ✅ [飞书] 推送成功: {raw_data.get('title')[:10]}")
             else:
                 print(f"   ❌ [飞书] 推送失败: {res_json.get('msg')}")
+                # 调试信息
+                print(f"   🔍 调试信息: {json.dumps(clean_fields, ensure_ascii=False, indent=2)}")
         except Exception as e:
             print(f"   ❌ [飞书] 网络错误: {e}")

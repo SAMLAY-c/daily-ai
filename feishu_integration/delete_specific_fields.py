@@ -129,6 +129,8 @@ class FieldDeleter:
 
         # 要删除的字段名称列表
         fields_to_delete = [
+            "作者账号",
+            "发布日期",
             "视频链接",
             "地域归属",
             "内容类型",

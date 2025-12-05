@@ -24,6 +24,10 @@ class MediaHandler:
         with self.download_lock:
             print("   🔄 [Media] 获取下载权限，开始下载...")
 
+            # 获取当前脚本目录下的 ffmpeg 路径
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            ffmpeg_path = os.path.join(current_dir, 'ffmpeg')
+
             # yt-dlp 优化配置，解决 403 错误
             ydl_opts = {
                 'format': 'bestaudio/best',
@@ -45,6 +49,8 @@ class MediaHandler:
                 # 添加重试机制
                 'retries': 3,
                 'fragment_retries': 3,
+                # 指定 ffmpeg 路径
+                'ffmpeg_location': ffmpeg_path,
             }
 
             try:
