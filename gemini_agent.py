@@ -1,97 +1,129 @@
 import os
 import json
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+from zhipuai import ZhipuAI
 
 load_dotenv()
 
 class GeminiAgent:
     def __init__(self):
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key:
-            raise ValueError("❌ 未设置 GOOGLE_API_KEY")
-        self.client = genai.Client(api_key=api_key)
+        # 使用智谱AI API
+        self.api_key = os.getenv("ZHIPUAI_API_KEY")
+        self.base_url = os.getenv("ZHIPUAI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
+        self.model = os.getenv("ZHIPUAI_MODEL", "glm-4-flash-250414")
 
-    def analyze_content(self, text_content, source_type="video", original_link=""):
-        """
-        使用 Gemini 分析文本内容并返回 JSON
-        :param text_content: 视频转录文本或文章内容
-        :param source_type: video 或 article
-        :param original_link: 原始链接地址
-        """
-        current_date = os.getenv("CURRENT_DATE", "今天")
+        if not self.api_key:
+            print("⚠️ 未设置 ZHIPUAI_API_KEY")
+            self.client = None
+        else:
+            self.client = ZhipuAI(api_key=self.api_key)
 
-        # 核心 Prompt：要求严格的 JSON 格式
+    def analyze_content(self, text_content, source_type="article", original_link=""):
+        """使用 智谱AI 分析内容"""
+        if not self.client:
+            return self._get_empty_structure()
+
+        # 截断过长文本
+        text_content = text_content[:30000]
+
+        # 构建 prompt - 保持与原始格式兼容
         prompt = f"""
-        你是一位科技与商业洞察专家。请分析以下{source_type}的内容。
+你是一位科技与商业情报分析师。请分析以下来自【{source_type}】的内容。
 
-        原始链接：{original_link}
-        内容：
-        {text_content[:30000]}  # 截取前3万字符防止超长
+原始链接：{original_link}
 
-        请提取以下关键信息，并严格以 JSON 格式返回（不要Markdown代码块）：
-        {{
-            "基础元数据": {{
-                "新闻标题": "内容的完整标题",
-                "原文链接": "{original_link}",  # 直接使用提供的原始链接，不要从内容中提取
-                "来源渠道": "选择一个：Twitter / GitHub / Arxiv / HuggingFace / 微信公众号 / 官方博客 / YouTube / Bilibili / 其他",
-                "作者账号": "关键KOL或机构名称",
-                "发布日期": "内容的原始发布时间（yyyy/MM/dd格式，如果无法确定填今天）"
-            }},
-            "技术与属性": {{
-                "所属领域": ["从以下选择：LLM / CV / Audio / Agent / RAG / 机器人 / 其他"],
-                "AI模型": ["提到的具体AI模型名称，选择：GPT-4、Claude-3、Llama-3、Stable Diffusion、Gemini、Midjourney、Sora、无、其他"],
-                "使用成本": "选择一个：🆓 开源免费 / 💰 商业付费 / 💳 API计费 / 🤝 免费试用 / 未知"
-            }},
-            "AI深度分析": {{
-                "一句话摘要": "TL;DR，用一句话概括核心内容（50字内）",
-                "核心亮点": "解决了什么痛点？有什么突破？用换行符分隔列出2-3点",
-                "模式创新": "技术或商业模式上的新颖之处分析",
-                "商业潜力": "⭐⭐⭐",
-                "完整转录": "内容详细总结（300字以内）",
-                "AI对话分析": "对该内容的专业分析见解"
-            }}
-        }}
+任务：
+1. 提取元数据和技术参数。
+2. 分析商业潜力和核心创新点。
+3. 生成一份详细的 JSON 报告。
 
-        注意：
-        1. 商业潜力评分用星星表示：⭐(1星)到⭐⭐⭐⭐⭐(5星)
-        2. 数组字段用方括号包围
-        3. 严格按照JSON格式返回，不要添加任何注释
-        """
+内容正文：
+{text_content}
+
+请严格按照以下JSON格式返回，不要包含任何其他文字或markdown标记：
+{{
+    "基础元数据": {{
+        "新闻标题": "简练的中文标题",
+        "原文链接": "{original_link}",
+        "来源渠道": "微信公众号",
+        "发布日期": "YYYY-MM-DD"
+    }},
+    "技术与属性": {{
+        "所属领域": ["LLM", "Agent", "硬件", "行业分析", "编程", "其他"],
+        "提及实体": ["文章中提到的关键公司、人名或产品"],
+        "关键词": ["Tag1", "Tag2", "Tag3"]
+    }},
+    "AI深度分析": {{
+        "一句话摘要": "50字以内的核心总结",
+        "核心亮点": "1. 亮点一\\n2. 亮点二",
+        "商业潜力": "⭐⭐⭐ (1-5星)",
+        "主要观点": "文章表达的核心论点（200字以内）",
+        "行动建议": "基于此信息，读者应该关注什么？"
+    }}
+}}
+
+要求：
+1. 严格按照上述JSON结构返回
+2. 商业潜力用⭐符号表示，1-5星
+3. 数组字段用方括号包围
+4. 不要添加任何注释或解释
+"""
 
         try:
-            response = self.client.models.generate_content(
-                model="gemini-2.0-flash", # 推荐使用最新的 flash 模型，速度快且便宜
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json" # 强制返回 JSON
-                )
+            response = self.client.chat.completions.create(
+                model=self.model,  # 从环境变量读取模型
+                messages=[
+                    {"role": "system", "content": "你是一个专业的JSON数据提取助手，严格按照用户要求的JSON格式返回结果，不添加任何其他文字。"},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=4000
             )
-            # 解析返回的 JSON
-            return json.loads(response.text)
+
+            # 提取回复内容
+            content = response.choices[0].message.content.strip()
+
+            # 尝试解析JSON
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                # 如果解析失败，尝试提取JSON部分
+                if "```json" in content:
+                    json_part = content.split("```json")[1].split("```")[0].strip()
+                    return json.loads(json_part)
+                elif "{" in content and "}" in content:
+                    # 提取第一个完整的JSON对象
+                    start = content.find("{")
+                    end = content.rfind("}") + 1
+                    json_part = content[start:end]
+                    return json.loads(json_part)
+                else:
+                    raise Exception("无法解析AI返回的JSON格式")
+
         except Exception as e:
-            print(f"   ❌ Gemini 分析失败: {e}")
-            # 返回一个空的安全结构，防止程序崩溃
-            return {
-                "基础元数据": {
-                    "新闻标题": "分析失败",
-                    "原文链接": "",
-                    "来源渠道": "其他",
-                    "作者账号": "",
-                    "发布日期": ""
-                },
-                "技术与属性": {
-                    "所属领域": ["其他"],
-                    "AI模型": ["无"],  # 确保是数组格式
-                    "使用成本": "未知"
-                },
-                "AI深度分析": {
-                    "一句话摘要": "AI分析失败",
-                    "核心亮点": "",
-                    "模式创新": "",
-                    "商业潜力": "⭐",
-                    "完整转录": "",
-                    "AI对话分析": ""
-                }
+            print(f"   ❌ 智谱AI 分析失败: {e}")
+            return self._get_empty_structure()
+
+    def _get_empty_structure(self):
+        """返回空的安全结构，防止程序崩溃"""
+        return {
+            "基础元数据": {
+                "新闻标题": "分析失败",
+                "原文链接": "",
+                "来源渠道": "其他",
+                "发布日期": ""
+            },
+            "技术与属性": {
+                "所属领域": ["其他"],
+                "AI模型": ["无"],
+                "使用成本": "未知"
+            },
+            "AI深度分析": {
+                "一句话摘要": "AI分析失败",
+                "核心亮点": "",
+                "模式创新": "",
+                "商业潜力": "⭐",
+                "完整转录": "",
+                "AI对话分析": ""
             }
+        }

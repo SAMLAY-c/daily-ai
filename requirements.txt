@@ -1,5 +1,7 @@
-google-genai
-groq
+# google-genai
+# groq
+# openai
+zhipuai
 feedparser
 yt-dlp
 requests

@@ -1,133 +1,131 @@
+# main.py
+import time
 import os
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from rss_manager import RSSManager
-from media_handler import MediaHandler
-from gemini_agent import GeminiAgent
-from feishu_pusher import FeishuPusher
-from wewe_scraper import WeWeScraper
 
-# 加载配置
+# 引入模块
+from wewe_handler import WeWeHandler
+from gemini_agent import GeminiAgent
+from obsidian_pusher import ObsidianPusher
+from feishu_pusher import FeishuPusher
+
 load_dotenv()
 
-# 从 .env 文件读取订阅列表
-RSS_FEEDS = os.getenv("RSS_FEEDS", "")
-RSS_LIST = [feed.strip() for feed in RSS_FEEDS.split(",") if feed.strip()] if RSS_FEEDS else []
+class AutomationSystem:
+    def __init__(self):
+        self.wewe = WeWeHandler()
+        self.gemini = GeminiAgent()
+        self.obsidian = ObsidianPusher()
+        self.feishu = FeishuPusher()
 
-if not RSS_LIST:
-    print("❌ 错误：请在 .env 文件中配置 RSS_FEEDS 变量")
-    exit(1)
+        # 状态记录
+        self.last_wewe_check = datetime.min
+        self.wewe_check_interval = timedelta(hours=4) # 4小时检查一次
 
-print(f"📋 已加载 {len(RSS_LIST)} 个 RSS 订阅源")
+        self.test_mode = os.getenv("TEST_MODE", "false").lower() == "true"
 
-def main():
-    print("🚀 自动化情报监控系统启动...")
+    def run_wewe_cycle(self):
+        """执行微信公众号的处理流程"""
+        print(f"\n[{datetime.now().strftime('%H:%M:%S')}] 🟢 开始执行 WeWe RSS 检查周期...")
 
-    # 测试模式检查
-    test_mode = os.getenv("TEST_MODE", "false").lower() == "true"
-    if test_mode:
-        print("⚠️ 测试模式：只处理第一个RSS源和少量微信文章")
-        rss_list_to_process = RSS_LIST[:1]
-        wewe_limit = 3
-    else:
-        rss_list_to_process = RSS_LIST
-        wewe_limit = 10
+        # 1. 获取新文章列表
+        new_articles = self.wewe.fetch_article_list()
 
-    # 初始化各个模块
-    rss_manager = RSSManager()
-    media_handler = MediaHandler()
-    gemini_agent = GeminiAgent()
-    feishu_pusher = FeishuPusher()
-    wewe_scraper = WeWeScraper()
+        if not new_articles:
+            print("   没有发现新文章。")
+            return
 
-    # 处理常规RSS源
-    print("\n📰 处理RSS订阅源...")
-    for rss_url in rss_list_to_process:
-        print("-" * 40)
+        print(f"   共发现 {len(new_articles)} 篇待处理文章。")
 
-        # 1. 获取最新条目
-        entry = rss_manager.parse_feed(rss_url)
-        if not entry:
-            continue
-
-        video_id = entry.id if 'id' in entry else entry.link
-        title = entry.title
-
-        # 2. 检查是否处理过
-        if not rss_manager.is_new(rss_url, video_id):
-            print(f"   😴 无新内容: {title}")
-            continue
-
-        print(f"   🆕 发现更新: {title}")
-
-        # 3. 获取内容 (视频需转录，文章直接取摘要)
-        full_content = ""
-        is_video = False
-
-        if "youtube" in entry.link or "bilibili" in entry.link:
-            is_video = True
-            # 下载并转录
-            transcript = media_handler.process_link(entry.link)
-            if transcript:
-                full_content = transcript
-            else:
-                print("   ⚠️ 转录失败，回退到使用 RSS 摘要")
-                full_content = entry.summary if 'summary' in entry else title
+        # 测试模式：只处理第一篇文章
+        if self.test_mode:
+            articles_to_process = new_articles[:1]
+            print(f"   ⚠️ 测试模式：只处理第一篇文章")
         else:
-            # 普通文章，直接使用 RSS 里的摘要或全文
-            full_content = entry.summary if 'summary' in entry else title
+            articles_to_process = new_articles
 
-        if not full_content:
-            print("   ❌ 内容为空，跳过分析")
-            continue
+        # 处理选定的文章
+        for article in articles_to_process:
+            self.process_single_article(article)
 
-        # 4. Gemini 智能分析
-        print("   🧠 Gemini 正在分析...")
-        source_type = "video" if is_video else "article"
-        analysis_result = gemini_agent.analyze_content(full_content, source_type, entry.link)
+        # 更新检查时间
+        self.last_wewe_check = datetime.now()
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] ✅ WeWe RSS 周期执行完毕。")
 
-        # 5. 推送飞书
-        print("   📤 推送到飞书...")
-        feishu_pusher.push_record(entry, analysis_result, full_content if is_video else None, "video" if is_video else "article")
+    def process_single_article(self, article):
+        """处理单篇文章的核心逻辑"""
+        title = article['title']
+        url = article['url']
+        date = article['date']
 
-        # 6. 更新历史记录
-        rss_manager.update_history(rss_url, video_id, title)
+        print(f"      📄 处理: {title[:30]}...")
 
-    # 处理微信文章
-    print("\n📱 处理微信文章...")
-    print("-" * 40)
-    wewe_articles = wewe_scraper.get_new_articles(limit=wewe_limit)
+        # 1. 获取内容
+        content = self.wewe.get_article_content(url)
+        if not content:
+            print("      ❌ 内容获取失败，跳过")
+            return
 
-    for article in wewe_articles:
-        if not article:
-            continue
+        # 2. Gemini 分析
+        print("      🧠 正在进行 AI 分析...")
+        analysis_json = self.gemini.analyze_content(content, source_type="微信公众号", original_link=url)
 
-        print(f"   🆕 处理微信文章: {article.title}")
+        # 3. 推送飞书
+        try:
+            # 构造兼容的raw_data字典
+            raw_data = {
+                'title': title,
+                'link': url,
+                'author': '微信公众号',
+                'date_published': date,
+                'id': url
+            }
+            self.feishu.push_record(raw_data, analysis_json, content, "article")
+            print("      ✅ 飞书推送成功")
+        except Exception as e:
+            print(f"      ❌ 飞书推送失败: {e}")
 
-        # 使用微信文章的完整内容
-        full_content = article.content
-        if not full_content:
-            print("   ❌ 内容为空，跳过分析")
-            continue
+        # 4. 推送 Obsidian
+        obsidian_success = self.obsidian.push_article(title, content, url, date, analysis_json)
 
-        # Gemini 智能分析
-        print("   🧠 Gemini 正在分析...")
-        analysis_result = gemini_agent.analyze_content(full_content, "article", article.link)
+        # 5. 标记为已处理 (只有在至少一个推送成功或尝试后才标记，避免死循环)
+        self.wewe.mark_processed(url)
 
-        # 推送飞书 - 构造兼容的raw_data字典
-        raw_data = {
-            'title': article.title,
-            'link': article.link,
-            'author': article.author,
-            'date_published': article.date_published,
-            'id': article.id
-        }
-        print("   📤 推送到飞书...")
-        feishu_pusher.push_record(raw_data, analysis_result, article.content, "article")
+        # 避免 Gemini 限流，单篇之间小歇一下
+        time.sleep(3)
 
-        print(f"   ✅ 微信文章处理完成: {article.title}")
+    def run(self):
+        """主循环"""
+        print("🚀 系统启动 (按 Ctrl+C 停止)")
+        print(f"   配置: 每 {self.wewe_check_interval} 检查一次 WeWe RSS")
 
-    print("-" * 40)
-    print("🎉 所有任务执行完毕")
+        try:
+            while True:
+                now = datetime.now()
+
+                # 检查是否满足 4 小时间隔
+                if now - self.last_wewe_check > self.wewe_check_interval:
+                    self.run_wewe_cycle()
+                else:
+                    # 计算下次运行时间
+                    next_run = self.last_wewe_check + self.wewe_check_interval
+                    minutes_left = (next_run - now).seconds // 60
+                    # 打印心跳日志（可选）
+                    # print(f"⏳ 待机中... 下次 WeWe 更新约在 {minutes_left} 分钟后")
+
+                # 主循环休眠，避免 CPU 占用过高
+                # 建议每分钟检查一次时间
+                time.sleep(60)
+
+        except KeyboardInterrupt:
+            print("\n🛑 系统已停止")
 
 if __name__ == "__main__":
-    main()
+    system = AutomationSystem()
+    # 如果是测试模式，直接运行一次
+    if os.getenv("TEST_MODE") == "true":
+        print("⚠️ 测试模式：立即运行一次")
+        system.run_wewe_cycle()
+    else:
+        system.run()

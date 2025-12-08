@@ -80,6 +80,7 @@ class FeishuPusher:
                 "text": "点击查看原文"
             } if final_link else None,
             "来源渠道": meta_data.get('来源渠道', '其他'),
+            "作者账号": meta_data.get('作者账号', '未知作者'),  # 使用AI分析中的作者信息
             "收藏日期": collect_timestamp,
 
             # === 技术与属性 (Tech & Attributes) ===
