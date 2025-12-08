@@ -72,6 +72,10 @@ transcripts/
 progress/
 history.json
 
+# 微信文章相关文件
+wewe_articles/
+wewe_history.json
+
 # IDE
 .vscode/
 .idea/

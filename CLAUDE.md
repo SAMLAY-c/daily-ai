@@ -15,14 +15,16 @@ This is an RSS-Github automation system that monitors content from RSS feeds (Yo
 3. **media_handler.py** - Media download and audio extraction using `yt-dlp` and `ffmpeg`
 4. **gemini_agent.py** - AI analysis using Google Gemini API for content extraction and classification
 5. **feishu_pusher.py** - Feishu API integration for pushing structured data to spreadsheets
+6. **wewe_scraper.py** - WeChat article scraper with content extraction and history tracking
 
 ### Feishu Integration Module (`feishu_integration/`)
 
 Separate module containing Feishu management utilities:
-- **create_feishu_fields.py** - Creates spreadsheet fields
+- **create_feishu_fields.py** - Creates spreadsheet fields with 24+ predefined field types
 - **update_business_field.py** - Updates field types (star ratings)
 - **delete_specific_fields.py** - Field cleanup utilities
 - **clear_feishu_table.py** - Data clearing functionality
+- **list_feishu_fields.py** - Field inspection utilities
 
 ## Environment Setup
 
@@ -41,23 +43,49 @@ cp .env.example .env  # Edit .env with your API keys
 Required environment variables:
 ```
 GOOGLE_API_KEY=your_gemini_api_key
+GROQ_API_KEY=your_groq_api_key  # For Whisper transcription
 FEISHU_APP_ID=your_feishu_app_id
 FEISHU_APP_SECRET=your_feishu_app_secret
 FEISHU_BITABLE_APP_TOKEN=your_table_token
 FEISHU_TABLE_ID=your_table_id
+RSS_FEEDS=comma_separated_rss_urls
+WEWE_RSS_URL=wechat_rss_service_url
+TEST_MODE=false  # Set to true to limit processing for testing
 ```
 
 ## Common Operations
 
 ### Running the System
 ```bash
+# Full production run
 python main.py
+
+# Test mode (limits to first RSS source and 3 WeChat articles)
+TEST_MODE=true python main.py
+```
+
+### Service Management
+```bash
+# Start as background service with logging
+python manage_service.py start
+
+# Stop background service
+python manage_service.py stop
+
+# Check service status
+python manage_service.py status
+
+# Continuous hourly monitoring
+./run_hourly.sh
 ```
 
 ### Managing Feishu Integration
 ```bash
 # Create all required fields in Feishu table
 python feishu_integration/create_feishu_fields.py --auto-confirm
+
+# List current fields
+python feishu_integration/list_feishu_fields.py
 
 # Update business potential field to star display
 python feishu_integration/update_business_field.py
@@ -71,38 +99,118 @@ python feishu_integration/clear_feishu_table.py --auto-confirm
 # Test RSS parsing
 python -c "from rss_manager import RSSManager; print(RSSManager().parse_feed('your_rss_url'))"
 
-# Test Feishu connection
-python feishu_integration/test_feishu_integration.py
+# Test media download
+python -c "from media_handler import MediaHandler; print(MediaHandler().download_media('url'))"
+
+# Test AI analysis
+python -c "from gemini_agent import GeminiAgent; print(GeminiAgent().analyze_content('text'))"
 ```
 
-## Data Flow
+## Data Flow Architecture
 
-1. **RSS Monitoring**: System polls RSS feeds defined in `main.py` RSS_LIST
-2. **Duplicate Detection**: Uses `history.json` to track processed content IDs
-3. **Media Processing**: Downloads video/audio for transcription when needed
-4. **AI Analysis**: Gemini extracts structured data including title, summary, business potential
-5. **Data Pushing**: FeishuPusher formats and uploads to spreadsheet with proper field mapping
+```
+┌─────────────────┐    ┌──────────────┐    ┌─────────────────┐
+│   RSS Sources   │    │ WeChat RSS   │    │  History Files  │
+│  (YouTube, etc) │    │   Service    │    │ (history.json)  │
+└─────────┬───────┘    └──────┬───────┘    └─────────────────┘
+          │                  │                      │
+          ▼                  ▼                      │
+┌─────────────────┐    ┌──────────────┐            │
+│  RSS Manager    │    │ WeWe Scraper │◄───────────┘
+└─────────┬───────┘    └──────┬───────┘
+          │                  │
+          ▼                  ▼
+┌─────────────────┐    ┌──────────────┐
+│ Content Type    │    │  Article Text │
+│   Detection     │    │  Extraction   │
+└─────────┬───────┘    └──────┬───────┘
+          │                  │
+    Video │                  │ Articles
+          ▼                  ▼
+┌─────────────────┐    ┌──────────────┐
+│  Media Handler  │    │  Direct Text │
+│ (Download +     │    │   to AI      │
+│  Transcription) │    └──────┬───────┘
+└─────────┬───────┘           │
+          │                   │
+          ▼                   ▼
+┌─────────────────────────────────────┐
+│         Gemini Agent                 │
+│     (AI Analysis + JSON Output)     │
+└─────────────────┬───────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────┐
+│        Feishu Pusher                │
+│   (Field Mapping + API Upload)      │
+└─────────────────┬───────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────┐
+│      Feishu Spreadsheet             │
+│     (Structured Data Storage)       │
+└─────────────────────────────────────┘
+```
 
 ## Key Data Structures
 
 - **RSS Entry**: Standard feedparser format with title, link, published date
-- **AI Analysis Output**: Structured JSON with metadata, technical specs, and insights
-- **Feishu Fields**: Predefined schema matching AI output structure
+- **AI Analysis Output**: Structured JSON with metadata, technical specs, insights, and business potential ratings
+- **Feishu Fields**: Comprehensive 24+ field schema including content type, transcription, tags, and ratings
+- **History Tracking**: `history.json` for RSS, `wewe_history.json` for WeChat articles
+
+## Deployment Options
+
+### Local Development
+- Virtual environment with Python 3.10+
+- FFmpeg binary included (80MB) or system installation
+- Environment variables via `.env` file
+
+### Production Deployment
+- **GitHub Actions**: Hourly cron jobs with automatic FFmpeg installation
+- **macOS LaunchAgent**: `com.user.rssmonitor.plist` for system service
+- **Background Service**: `manage_service.py` for daemonized operation
 
 ## Dependencies
 
-- `google-genai`: Gemini AI API client
+### Core Libraries
+- `google-genai`: Gemini AI API client for content analysis
+- `groq`: Whisper API for Chinese-focused transcription
 - `feedparser`: RSS feed parsing
-- `yt-dlp`: Media content extraction
-- `requests`: HTTP client for Feishu API
+- `yt-dlp`: Media content extraction with robust configuration
+- `requests`: HTTP client for API integrations
+
+### Utilities
 - `python-dotenv`: Environment variable management
-- `ffmpeg-python`: Audio processing
+- `beautifulsoup4`: WeChat article content extraction
+- `ffmpeg-python`: Audio processing interface
 - `Pillow`: Image processing
-- `groq`: Alternative AI model support
+
+## System Features
+
+### Media Processing
+- Automatic video/audio download using `yt-dlp`
+- Audio segmentation for long content processing
+- Retry mechanisms and fallback strategies
+- Thread-safe download queue management
+
+### AI Analysis
+- Structured JSON output enforcement
+- Comprehensive content classification
+- Business potential rating system
+- Technical specification extraction
+
+### Data Management
+- Duplicate prevention across all content types
+- Token caching for API efficiency
+- Configurable test modes for safe development
+- Comprehensive logging and artifact preservation
 
 ## Troubleshooting
 
-- **RSS Issues**: Check feed URLs are accessible and properly formatted
+- **RSS Issues**: Verify feed URLs are accessible and properly formatted
 - **Media Download**: Ensure `yt-dlp` and `ffmpeg` are installed and accessible
-- **Feishu API**: Verify API credentials and table permissions
+- **Feishu API**: Verify API credentials and table permissions (bitable:app scope required)
 - **Gemini API**: Check quota limits and API key validity
+- **WeChat Scraping**: Ensure WeWe RSS service is accessible at configured URL
+- **Service Issues**: Check logs in `logs/rss_monitor.log` for background operations

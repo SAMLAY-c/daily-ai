@@ -232,6 +232,12 @@ class FeishuFieldCreator:
                 "description": "视频字幕或网页全文的清洗版"
             },
             {
+                "name": "爬取到的文字",
+                "type": 1,  # 多行文本
+                "category": "AI深度分析",
+                "description": "微信文章爬取的完整文字内容"
+            },
+            {
                 "name": "AI对话分析",
                 "type": 1,  # 多行文本
                 "category": "AI深度分析",

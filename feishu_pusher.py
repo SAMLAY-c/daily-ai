@@ -45,11 +45,12 @@ class FeishuPusher:
         except:
             return "⭐"
 
-    def push_record(self, raw_data, ai_analysis, original_transcript=None):
+    def push_record(self, raw_data, ai_analysis, original_transcript=None, content_type="video"):
         """
         raw_data: RSS原始数据 (title, link, published_parsed)
         ai_analysis: Gemini 返回的 JSON 数据
-        original_transcript: 原始转录内容（完整文本）
+        original_transcript: 原始转录内容（完整文本）或爬取的文字
+        content_type: 内容类型 - "video"（视频转录）或 "article"（微信文章爬取）
         """
         token = self.get_tenant_token()
         if not token: return
@@ -91,7 +92,9 @@ class FeishuPusher:
             "核心亮点": analysis_data.get('核心亮点', ''),
             "模式创新": analysis_data.get('模式创新', ''),
             "商业潜力": self.convert_to_stars(analysis_data.get('商业潜力', '⭐')),
-            "完整转录": original_transcript[:5000] if original_transcript else '', # 原始完整转录内容，限制长度防止溢出
+            # 根据内容类型选择字段名
+            "完整转录": original_transcript[:5000] if original_transcript and content_type == "video" else '',
+            "爬取到的文字": original_transcript[:5000] if original_transcript and content_type == "article" else '',
             "AI对话分析": analysis_data.get('AI对话分析', '') # AI的分析结果
         }
 

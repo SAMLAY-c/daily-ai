@@ -1,0 +1,556 @@
+{
+  "export_time": "2025-12-06 19:16:10",
+  "app_token": "Cprlb3kZFaBOyNsleepcdSAJnN5",
+  "table_id": "tblS7Lr8KRKHYBDo",
+  "total_fields": 21,
+  "fields": [
+    {
+      "field_id": "fldRJ6ZXT2",
+      "field_name": "收藏日期",
+      "is_primary": true,
+      "property": {
+        "auto_fill": false,
+        "date_formatter": "yyyy/MM/dd"
+      },
+      "type": 5,
+      "ui_type": "DateTime"
+    },
+    {
+      "field_id": "fldU5k4HXA",
+      "field_name": "新闻标题",
+      "is_primary": false,
+      "property": null,
+      "type": 1,
+      "ui_type": "Text"
+    },
+    {
+      "field_id": "fld4k2bSBP",
+      "field_name": "原文链接",
+      "is_primary": false,
+      "property": null,
+      "type": 15,
+      "ui_type": "Url"
+    },
+    {
+      "field_id": "fldx3g4Ifq",
+      "field_name": "来源渠道",
+      "is_primary": false,
+      "property": {
+        "options": [
+          {
+            "color": 0,
+            "id": "optF51fYAA",
+            "name": "Twitter"
+          },
+          {
+            "color": 1,
+            "id": "optK0F5qPT",
+            "name": "GitHub"
+          },
+          {
+            "color": 2,
+            "id": "optM8uVjui",
+            "name": "Arxiv"
+          },
+          {
+            "color": 3,
+            "id": "optPHWfTmT",
+            "name": "HuggingFace"
+          },
+          {
+            "color": 4,
+            "id": "optIAYAeww",
+            "name": "微信公众号"
+          },
+          {
+            "color": 5,
+            "id": "optY9V2Mn2",
+            "name": "官方博客"
+          },
+          {
+            "color": 6,
+            "id": "optEGhQx0Z",
+            "name": "YouTube"
+          },
+          {
+            "color": 7,
+            "id": "optvLdgKfb",
+            "name": "Bilibili"
+          },
+          {
+            "color": 8,
+            "id": "optAr8Z4Gx",
+            "name": "其他"
+          }
+        ]
+      },
+      "type": 3,
+      "ui_type": "SingleSelect"
+    },
+    {
+      "field_id": "fld0vTo4Cm",
+      "field_name": "所属领域",
+      "is_primary": false,
+      "property": {
+        "options": [
+          {
+            "color": 0,
+            "id": "opti6e9Zfi",
+            "name": "LLM"
+          },
+          {
+            "color": 1,
+            "id": "optsSfEhGn",
+            "name": "CV"
+          },
+          {
+            "color": 2,
+            "id": "opt3P5Ab2W",
+            "name": "Audio"
+          },
+          {
+            "color": 3,
+            "id": "opt139XPv5",
+            "name": "Agent"
+          },
+          {
+            "color": 4,
+            "id": "optsHBbNCv",
+            "name": "RAG"
+          },
+          {
+            "color": 5,
+            "id": "optVP8l8fb",
+            "name": "机器人"
+          },
+          {
+            "color": 6,
+            "id": "optaSvbdbw",
+            "name": "其他"
+          },
+          {
+            "color": 7,
+            "id": "opt143591825",
+            "name": "AI"
+          },
+          {
+            "color": 8,
+            "id": "opt1301681166",
+            "name": "应用开发"
+          },
+          {
+            "color": 9,
+            "id": "opt1563173215",
+            "name": "自动驾驶"
+          },
+          {
+            "color": 10,
+            "id": "opt176782878",
+            "name": "云计算"
+          }
+        ]
+      },
+      "type": 4,
+      "ui_type": "MultiSelect"
+    },
+    {
+      "field_id": "fldsUPADye",
+      "field_name": "AI模型",
+      "is_primary": false,
+      "property": {
+        "options": [
+          {
+            "color": 0,
+            "id": "optrlQ0JGP",
+            "name": "GPT-4"
+          },
+          {
+            "color": 1,
+            "id": "optiyoS8pr",
+            "name": "Claude- code"
+          },
+          {
+            "color": 2,
+            "id": "opthNMHO4Z",
+            "name": "Llama-3"
+          },
+          {
+            "color": 3,
+            "id": "optNtAlpCB",
+            "name": "Stable Diffusion"
+          },
+          {
+            "color": 4,
+            "id": "optYDusvDI",
+            "name": "Gemini"
+          },
+          {
+            "color": 5,
+            "id": "optTktX9rW",
+            "name": "Midjourney"
+          },
+          {
+            "color": 6,
+            "id": "optsdpdgf5",
+            "name": "Sora"
+          },
+          {
+            "color": 7,
+            "id": "optu6n7udE",
+            "name": "无"
+          },
+          {
+            "color": 8,
+            "id": "optPIr8n8X",
+            "name": "其他"
+          },
+          {
+            "color": 9,
+            "id": "opt675074001",
+            "name": "Gemini 3"
+          },
+          {
+            "color": 10,
+            "id": "optHy1goXM",
+            "name": "Claude code"
+          },
+          {
+            "color": 0,
+            "id": "opt689083110",
+            "name": "Wan2.1"
+          },
+          {
+            "color": 1,
+            "id": "opt197657075",
+            "name": "Cosmos-Predict2"
+          },
+          {
+            "color": 2,
+            "id": "opt416410483",
+            "name": "Claude-3"
+          }
+        ]
+      },
+      "type": 4,
+      "ui_type": "MultiSelect"
+    },
+    {
+      "field_id": "fldcSC958C",
+      "field_name": "使用成本",
+      "is_primary": false,
+      "property": {
+        "options": [
+          {
+            "color": 0,
+            "id": "opt7XvXKvP",
+            "name": "🆓 开源免费"
+          },
+          {
+            "color": 1,
+            "id": "optMV8e7ah",
+            "name": "💰 商业付费"
+          },
+          {
+            "color": 2,
+            "id": "opthDJ27th",
+            "name": "💳 API计费"
+          },
+          {
+            "color": 3,
+            "id": "optyjY8ybO",
+            "name": "🤝 免费试用"
+          },
+          {
+            "color": 4,
+            "id": "optlwfR14U",
+            "name": "未知"
+          }
+        ]
+      },
+      "type": 3,
+      "ui_type": "SingleSelect"
+    },
+    {
+      "field_id": "fldIZWAFd4",
+      "field_name": "一句话摘要",
+      "is_primary": false,
+      "property": null,
+      "type": 1,
+      "ui_type": "Text"
+    },
+    {
+      "field_id": "flddt4Ji8n",
+      "field_name": "核心亮点",
+      "is_primary": false,
+      "property": null,
+      "type": 1,
+      "ui_type": "Text"
+    },
+    {
+      "field_id": "fldi05MVai",
+      "field_name": "模式创新",
+      "is_primary": false,
+      "property": null,
+      "type": 1,
+      "ui_type": "Text"
+    },
+    {
+      "field_id": "fldlBppJ7C",
+      "field_name": "商业潜力",
+      "is_primary": false,
+      "property": null,
+      "type": 1,
+      "ui_type": "Text"
+    },
+    {
+      "field_id": "fldDGNI459",
+      "field_name": "完整转录",
+      "is_primary": false,
+      "property": null,
+      "type": 1,
+      "ui_type": "Text"
+    },
+    {
+      "field_id": "fld8FlPfcL",
+      "field_name": "AI对话分析",
+      "is_primary": false,
+      "property": null,
+      "type": 1,
+      "ui_type": "Text"
+    },
+    {
+      "field_id": "fldHQ2aegs",
+      "field_name": "爬取到的文字",
+      "is_primary": false,
+      "property": null,
+      "type": 1,
+      "ui_type": "Text"
+    },
+    {
+      "field_id": "fldEYszAqQ",
+      "field_name": "视频链接",
+      "is_primary": false,
+      "property": null,
+      "type": 15,
+      "ui_type": "Url"
+    },
+    {
+      "field_id": "fldUNBWClt",
+      "field_name": "作者账号",
+      "is_primary": false,
+      "property": null,
+      "type": 1,
+      "ui_type": "Text"
+    },
+    {
+      "field_id": "fldq5KBB8D",
+      "field_name": "地域归属",
+      "is_primary": false,
+      "property": {
+        "options": [
+          {
+            "color": 0,
+            "id": "optQSL7jp6",
+            "name": "🌏 国外"
+          },
+          {
+            "color": 1,
+            "id": "optnzNDcnN",
+            "name": "🇨🇳 国内"
+          },
+          {
+            "color": 2,
+            "id": "opteWmK6x5",
+            "name": "未知"
+          }
+        ]
+      },
+      "type": 3,
+      "ui_type": "SingleSelect"
+    },
+    {
+      "field_id": "fld5VJrnVm",
+      "field_name": "发布日期",
+      "is_primary": false,
+      "property": {
+        "auto_fill": false,
+        "date_formatter": "yyyy/MM/dd"
+      },
+      "type": 5,
+      "ui_type": "DateTime"
+    },
+    {
+      "field_id": "fldG6rvRFF",
+      "field_name": "内容类型",
+      "is_primary": false,
+      "property": {
+        "options": [
+          {
+            "color": 0,
+            "id": "optYuaOifJ",
+            "name": "📄 论文"
+          },
+          {
+            "color": 1,
+            "id": "optvjpq3al",
+            "name": "🛠️ 工具"
+          },
+          {
+            "color": 2,
+            "id": "optMXQ5opP",
+            "name": "📰 新闻"
+          },
+          {
+            "color": 3,
+            "id": "optzzE0Mee",
+            "name": "📦 模型"
+          },
+          {
+            "color": 4,
+            "id": "optISTHNND",
+            "name": "💡 教程"
+          },
+          {
+            "color": 5,
+            "id": "optplTFbee",
+            "name": "🎥 视频"
+          }
+        ]
+      },
+      "type": 3,
+      "ui_type": "SingleSelect"
+    },
+    {
+      "field_id": "fldkJzWdcP",
+      "field_name": "涉及技术",
+      "is_primary": false,
+      "property": {
+        "options": [
+          {
+            "color": 0,
+            "id": "optLxyn07g",
+            "name": "Transformer"
+          },
+          {
+            "color": 1,
+            "id": "optJD8RI0d",
+            "name": "Diffusion"
+          },
+          {
+            "color": 2,
+            "id": "opt9fYvlqU",
+            "name": "RLHF"
+          },
+          {
+            "color": 3,
+            "id": "optO5jySqW",
+            "name": "LoRA"
+          },
+          {
+            "color": 4,
+            "id": "opt1tRxlvM",
+            "name": "Mamba"
+          },
+          {
+            "color": 5,
+            "id": "optCBxSlhq",
+            "name": "其他"
+          }
+        ]
+      },
+      "type": 4,
+      "ui_type": "MultiSelect"
+    },
+    {
+      "field_id": "fldu4K0JYs",
+      "field_name": "核心关键词",
+      "is_primary": false,
+      "property": {
+        "options": [
+          {
+            "color": 0,
+            "id": "optcFpLRiN",
+            "name": "AI"
+          },
+          {
+            "color": 1,
+            "id": "optyZMHtVR",
+            "name": "机器学习"
+          },
+          {
+            "color": 2,
+            "id": "optZDMYENw",
+            "name": "深度学习"
+          },
+          {
+            "color": 3,
+            "id": "optbZKjQVB",
+            "name": "自然语言处理"
+          },
+          {
+            "color": 4,
+            "id": "optDlwHpet",
+            "name": "计算机视觉"
+          },
+          {
+            "color": 5,
+            "id": "optqKhTRZ9",
+            "name": "语音识别"
+          },
+          {
+            "color": 6,
+            "id": "opt3cwNM3y",
+            "name": "推荐系统"
+          },
+          {
+            "color": 7,
+            "id": "optPN8eQUY",
+            "name": "自动驾驶"
+          },
+          {
+            "color": 8,
+            "id": "optTreypTA",
+            "name": "机器人"
+          },
+          {
+            "color": 9,
+            "id": "optHINHz5M",
+            "name": "区块链"
+          },
+          {
+            "color": 10,
+            "id": "opt7tCPek9",
+            "name": "物联网"
+          },
+          {
+            "color": 11,
+            "id": "optxcyAT7Z",
+            "name": "云计算"
+          },
+          {
+            "color": 12,
+            "id": "optytXmzNe",
+            "name": "大数据"
+          },
+          {
+            "color": 13,
+            "id": "optsbeyse6",
+            "name": "开源"
+          },
+          {
+            "color": 14,
+            "id": "optmLc15IM",
+            "name": "商业化"
+          },
+          {
+            "color": 15,
+            "id": "opt4ZgjiMH",
+            "name": "其他"
+          }
+        ]
+      },
+      "type": 4,
+      "ui_type": "MultiSelect"
+    }
+  ]
+}

@@ -59,6 +59,9 @@ jobs:
         # RSS订阅源列表
         RSS_FEEDS=${{ secrets.RSS_FEEDS }}
 
+        # 微信RSS源配置
+        WEWE_RSS_URL=${{ secrets.WEWE_RSS_URL }}
+
         # 测试模式
         TEST_MODE=false
         EOF
@@ -74,5 +77,7 @@ jobs:
         name: execution-logs
         path: |
           history.json
+          wewe_history.json
+          wewe_articles/
           transcripts/
           retention-days: 7
