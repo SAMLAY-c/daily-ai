@@ -69,7 +69,7 @@ class AutomationSystem:
 
         # 2. Gemini 分析
         print("      🧠 正在进行 AI 分析...")
-        analysis_json = self.gemini.analyze_content(content, source_type="微信公众号", original_link=url)
+        analysis_json = self.gemini.analyze_content(content, title, source_type="微信公众号", original_link=url)
 
         # 3. 推送飞书
         try:
