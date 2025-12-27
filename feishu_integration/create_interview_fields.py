@@ -7,12 +7,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-class FeishuFieldCreator:
+class InterviewFieldCreator:
     def __init__(self):
-        self.app_id = os.getenv("FEISHU_APP_ID")
-        self.app_secret = os.getenv("FEISHU_APP_SECRET")
-        self.app_token = os.getenv("FEISHU_BITABLE_APP_TOKEN")
-        self.table_id = os.getenv("FEISHU_TABLE_ID")
+        self.app_id = os.getenv("INTERVIEW_APP_ID")
+        self.app_secret = os.getenv("INTERVIEW_APP_SECRET")
+        self.app_token = os.getenv("INTERVIEW_BITABLE_APP_TOKEN")
+        self.table_id = os.getenv("INTERVIEW_TABLE_ID")
         self.token = None
         self.token_expire_time = 0
 
@@ -50,7 +50,6 @@ class FeishuFieldCreator:
             "Content-Type": "application/json"
         }
 
-        # 构建字段数据 - 先尝试最简单的格式
         field_data = {
             "field_name": field_name,
             "type": field_type
@@ -62,9 +61,6 @@ class FeishuFieldCreator:
                 "options": [{"name": option} for option in options]
             }
 
-        # 暂时不添加ui_type和description，先用最基础的格式测试
-
-        # 生成唯一的客户端token
         params = {
             "client_token": str(uuid.uuid4())
         }
@@ -88,88 +84,124 @@ class FeishuFieldCreator:
             print(f"   ❌ 创建字段时出错: {e}")
             return False
 
-    def create_all_fields(self, auto_confirm=False, debug_single=False):
-        """创建所有字段"""
-        print("🚀 开始创建飞书多维表格字段...")
+    def create_all_fields(self, auto_confirm=False):
+        """创建所有面试记录字段"""
+        print("🚀 开始创建面试记录多维表格字段...")
 
         # 定义要创建的字段
         fields_config = [
-            # === 基础信息字段 ===
+            # === 基础信息区 ===
             {
-                "name": "主键/ID",
+                "name": "题目/话题",
                 "type": 1,  # 单行文本
-                "category": "基础信息",
-                "description": "唯一标识，防止重复插入"
+                "category": "基础信息区",
+                "description": "面试题目的核心描述"
             },
             {
-                "name": "标题",
-                "type": 1,  # 单行文本
-                "category": "基础信息",
-                "description": "文章或视频标题"
+                "name": "涉及产品/公司",
+                "type": 4,  # 多选
+                "category": "基础信息区",
+                "description": "题目涉及的主要公司或产品",
+                "options": ["京东", "美团", "腾讯", "抖音", "阿里", "百度", "字节跳动", "拼多多", "快手", "小红书", "其他"]
             },
             {
-                "name": "搜索词",
+                "name": "业务类型",
                 "type": 3,  # 单选
-                "category": "基础信息",
-                "description": "方便按关键词筛选",
-                "options": ["科技", "AI", "编程", "产品", "设计", "商业", "其他"]
+                "category": "基础信息区",
+                "description": "业务所属类型",
+                "options": ["电商", "社交", "工具", "O2O", "内容", "金融", "游戏", "教育", "医疗", "出行", "其他"]
             },
             {
-                "name": "发布时间",
+                "name": "创建时间",
                 "type": 5,  # 日期
-                "category": "基础信息",
-                "description": "建议带上时分秒"
-            },
-            {
-                "name": "帖子链接",
-                "type": 15,  # 超链接
-                "category": "基础信息",
-                "description": "点击跳转原文"
-            },
-            {
-                "name": "作者",
-                "type": 1,  # 单行文本
-                "category": "基础信息",
-                "description": "内容创作者"
-            },
-            {
-                "name": "内容类型",
-                "type": 3,  # 单选
-                "category": "基础信息",
-                "description": "区分是视频还是图文",
-                "options": ["视频", "图文", "音频", "其他"]
+                "category": "基础信息区",
+                "description": "记录创建的日期"
             },
 
-            # === 内容详情字段 ===
+            # === 深度解析区 ===
             {
-                "name": "正文详情",
-                "type": 1,  # 多行文本
-                "category": "内容详情",
-                "description": "原帖的文字描述"
+                "name": "表层现象 (Phenomenon)",
+                "type": 1,  # 单行文本
+                "category": "深度解析区",
+                "description": "描述看到的事实"
             },
             {
-                "name": "多媒体文件",
-                "type": 23,  # 附件
-                "category": "内容详情",
-                "description": "关键点：飞书'附件'字段支持在一个单元格内上传多个文件（图片+视频）"
+                "name": "战略意图 (Strategic Intent)",
+                "type": 4,  # 多选
+                "category": "深度解析区",
+                "description": "企业的战略目的",
+                "options": ["流量获取（拉新/促活）", "防御/护城河", "变现/营收", "生态闭环", "品牌建设", "技术布局", "用户留存", "其他"]
             },
             {
-                "name": "OCR识别汇总",
-                "type": 1,  # 多行文本
-                "category": "内容详情",
-                "description": "关键点：将N张图片的OCR文字合并存入这里"
+                "name": "核心商业逻辑 (Core Logic)",
+                "type": 1,  # 单行文本
+                "category": "深度解析区",
+                "description": "一句话概括本质"
             },
             {
-                "name": "精选评论",
-                "type": 1,  # 多行文本
-                "category": "内容详情",
-                "description": "将过滤后的评论拼接成文本存储"
+                "name": "关键支撑/资源 (Key Resources)",
+                "type": 1,  # 单行文本
+                "category": "深度解析区",
+                "description": "做成这件事的底牌是什么"
             },
             {
-                "name": "互动数据",
-                "type": 2,  # 数字
-                "category": "内容详情",
-                "description": "赞藏数"
+                "name": "批判性思考/风险点 (Critical Thinking)",
+                "type": 1,  # 单行文本
+                "category": "深度解析区",
+                "description": "反直觉的观点或难点"
+            },
+
+            # === 方法论沉淀区 ===
+            {
+                "name": "涉及思维模型",
+                "type": 4,  # 多选
+                "category": "方法论沉淀区",
+                "description": "题目涉及的商业思维模型",
+                "options": [
+                    "高频打低频", "网络效应", "边际成本", "供需关系", "围魏救赵",
+                    "单位经济模型(UE)", "用户体验五要素", "漏斗模型", "飞轮效应",
+                    "长尾理论", "破窗效应", "马太效应", "灰度创新", "第一性原理",
+                    "SWOT分析", "波士顿矩阵", "波特五力", "其他"
+                ]
+            },
+
+            # === 面试备战区 ===
+            {
+                "name": "考察能力项",
+                "type": 4,  # 多选
+                "category": "面试备战区",
+                "description": "本题考察的核心能力",
+                "options": [
+                    "商业敏感度", "战略视野", "用户同理心", "数据分析能力",
+                    "资源整合能力", "产品思维", "运营思维", "技术理解",
+                    "市场洞察", "沟通表达", "逻辑思维", "创新思维", "其他"
+                ]
+            },
+            {
+                "name": "回答金句/关键词",
+                "type": 1,  # 单行文本
+                "category": "面试备战区",
+                "description": "面试时必须说出来的得分词"
+            },
+            {
+                "name": "AI分析结果",
+                "type": 1,  # 单行文本
+                "category": "面试备战区",
+                "description": "AI助手生成的深度分析和建议"
+            },
+            {
+                "name": "难度评级",
+                "type": 3,  # 单选
+                "category": "面试备战区",
+                "description": "题目难度评估",
+                "options": ["⭐ 入门", "⭐⭐ 基础", "⭐⭐⭐ 中等", "⭐⭐⭐⭐ 进阶", "⭐⭐⭐⭐⭐ 困难"]
+            },
+            {
+                "name": "掌握程度",
+                "type": 3,  # 单选
+                "category": "面试备战区",
+                "description": "个人对题目的掌握程度",
+                "options": ["🔴 未掌握", "🟡 了解", "🟢 熟悉", "🔵 精通"]
             }
         ]
 
@@ -181,7 +213,7 @@ class FeishuFieldCreator:
                 categories[category] = []
             categories[category].append(field)
 
-        print(f"\n📋 将创建以下字段:")
+        print(f"\n📋 将创建以下面试记录字段:")
         for category, fields in categories.items():
             print(f"\n🔸 {category}:")
             for field in fields:
@@ -200,21 +232,6 @@ class FeishuFieldCreator:
             except EOFError:
                 print("❌ 无法获取用户确认，操作已取消")
                 return
-
-        # 如果是调试模式，只创建一个字段
-        if debug_single:
-            test_field = fields_config[0]
-            print(f"\n🔧 调试模式：只创建一个字段")
-            if self.create_field(
-                test_field["name"],
-                test_field["type"],
-                test_field.get("options"),
-                test_field.get("description")
-            ):
-                print("✅ 调试成功，可以尝试创建所有字段")
-            else:
-                print("❌ 调试失败，请检查配置")
-            return
 
         # 逐个创建字段
         print(f"\n🔨 开始创建字段...")
@@ -237,17 +254,16 @@ class FeishuFieldCreator:
             # 避免请求过快，API 限制为 10 次/秒
             time.sleep(0.2)
 
-        print(f"\n🎉 字段创建完成！")
+        print(f"\n🎉 面试记录字段创建完成！")
         print(f"   ✅ 成功创建: {success_count} 个字段")
         print(f"   ❌ 创建失败: {failed_count} 个字段")
 
 def main():
     import sys
     auto_confirm = "--auto-confirm" in sys.argv
-    debug_single = "--debug" in sys.argv
 
-    creator = FeishuFieldCreator()
-    creator.create_all_fields(auto_confirm=auto_confirm, debug_single=debug_single)
+    creator = InterviewFieldCreator()
+    creator.create_all_fields(auto_confirm=auto_confirm)
 
 if __name__ == "__main__":
     main()
