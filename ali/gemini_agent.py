@@ -18,7 +18,7 @@ class GeminiAgent:
         else:
             self.client = ZhipuAI(api_key=self.api_key)
 
-    def analyze_content(self, text_content, title="", source_type="article", original_link=""):
+    def analyze_content(self, text_content, title="", source_type="article", original_link="", publish_date=None):
         """使用 智谱AI 分析内容"""
         if not self.client:
             return self._get_empty_structure()
@@ -26,12 +26,21 @@ class GeminiAgent:
         # 截断过长文本
         text_content = text_content[:30000]
 
+        # 获取当前日期
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        # 如果没有提供发布日期，使用当前日期
+        if not publish_date:
+            publish_date = today
+
         # 构建 prompt - 与飞书表格字段完全匹配
         prompt = f"""
 你是一位科技与商业情报分析师。请分析以下来自【{source_type}】的内容。
 
 原标题：{title}
 原始链接：{original_link}
+发布日期：{publish_date}
 
 任务：
 1. 提取元数据和技术参数。
@@ -43,7 +52,7 @@ class GeminiAgent:
 
 请严格按照以下JSON格式返回，不要包含任何其他文字或markdown标记：
 {{
-    "收藏日期": "YYYY-MM-DD",
+    "收藏日期": "{today}",
     "来源渠道": "微信公众号",
     "使用成本": "🆓 开源免费 / 付费 / 未知",
     "新闻标题": "{title}",
@@ -55,7 +64,7 @@ class GeminiAgent:
     "所属领域": ["LLM", "语言模型", "图像模型", "视频模型", "编程模型", "Agent", "硬件", "行业分析", "编程", "其他"],
     "AI模型": ["ChatGPT", "Claude", "Gemini", "GPT-4", "Grok", "DeepSeek", "Kimi", "文心一言", "通义千问", "豆包", "混元", "智谱清言", "月之暗面", "Llama", "Mistral", "Midjourney", "Stable Diffusion", "Sora", "Runway", "可灵", "即梦", "LiblibAI", "/"],
     "核心关键词": ["关键词1", "关键词2", "关键词3"],
-    "发布日期": "YYYY-MM-DD",
+    "发布日期": "{publish_date}",
     "原文链接": "{original_link}"
 }}
 

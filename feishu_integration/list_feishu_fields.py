@@ -37,6 +37,307 @@ class FeishuFieldLister:
             print(f"❌ 请求 Token 失败: {resp.text}")
             return None
 
+    def format_field_value(self, field_type, value):
+        """格式化字段值以便显示"""
+        if value is None:
+            return ""
+
+        # 文本类型
+        if field_type == 1:
+            if isinstance(value, list) and len(value) > 0:
+                return value[0].get("text", "") if isinstance(value[0], dict) else str(value[0])
+            return str(value)
+
+        # 数字类型
+        elif field_type == 2:
+            return str(value)
+
+        # 单选
+        elif field_type == 3:
+            return str(value)
+
+        # 多选
+        elif field_type == 4:
+            if isinstance(value, list):
+                return ", ".join(value)
+            return str(value)
+
+        # 日期
+        elif field_type == 5:
+            if isinstance(value, (int, float)):
+                import datetime
+                dt = datetime.datetime.fromtimestamp(value / 1000)
+                return dt.strftime("%Y-%m-%d %H:%M:%S")
+            return str(value)
+
+        # 复选框
+        elif field_type == 7:
+            return "✅ 是" if value else "❌ 否"
+
+        # 人员
+        elif field_type == 11:
+            if isinstance(value, list):
+                names = [v.get("name", "") for v in value if isinstance(v, dict)]
+                return ", ".join(names)
+            return str(value)
+
+        # 电话号码
+        elif field_type == 13:
+            return str(value)
+
+        # 超链接
+        elif field_type == 15:
+            if isinstance(value, dict):
+                text = value.get("text", "")
+                link = value.get("link", "")
+                if text and link:
+                    return f"{text} ({link})"
+                return text or link
+            return str(value)
+
+        # 附件
+        elif field_type == 17:
+            if isinstance(value, list):
+                names = [v.get("name", "") for v in value if isinstance(v, dict)]
+                return ", ".join(names)
+            return str(value)
+
+        # 单向关联/双向关联
+        elif field_type in [18, 21]:
+            if isinstance(value, dict):
+                record_ids = value.get("link_record_ids", [])
+                return f"{len(record_ids)} 条关联记录"
+            return str(value)
+
+        # 公式/查找引用
+        elif field_type in [19, 20]:
+            if isinstance(value, dict):
+                inner_type = value.get("type")
+                inner_value = value.get("value")
+                return self.format_field_value(inner_type, inner_value)
+            return str(value)
+
+        # 地理位置
+        elif field_type == 22:
+            if isinstance(value, dict):
+                address = value.get("full_address", "")
+                name = value.get("name", "")
+                return f"{name} - {address}" if name and address else (name or address)
+            return str(value)
+
+        # 群组
+        elif field_type == 23:
+            if isinstance(value, list):
+                names = [v.get("name", "") for v in value if isinstance(v, dict)]
+                return ", ".join(names)
+            return str(value)
+
+        # 创建时间/最后更新时间
+        elif field_type in [1001, 1002]:
+            if isinstance(value, (int, float)):
+                import datetime
+                dt = datetime.datetime.fromtimestamp(value / 1000)
+                return dt.strftime("%Y-%m-%d %H:%M:%S")
+            return str(value)
+
+        # 创建人/修改人
+        elif field_type in [1003, 1004]:
+            if isinstance(value, list) and len(value) > 0:
+                return value[0].get("name", "")
+            return str(value)
+
+        # 自动编号
+        elif field_type == 1005:
+            return str(value)
+
+        return str(value)
+
+    def query_records(self, page_size=20, view_id=None, field_filter=None, sort=None):
+        """查询记录"""
+        token = self.get_tenant_token()
+        if not token:
+            return False
+
+        print("🔍 正在查询飞书多维表格记录...")
+        print(f"📋 表格信息: App Token = {self.app_token}, Table ID = {self.table_id}")
+        print()
+
+        url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{self.table_id}/records"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+
+        params = {
+            "page_size": min(page_size, 100)
+        }
+
+        if view_id:
+            params["view_id"] = view_id
+
+        # 添加字段选择
+        if field_filter:
+            params["field_names"] = field_filter
+
+        # 添加排序
+        if sort:
+            params["sort"] = json.dumps(sort)
+
+        all_records = []
+        page_token = None
+
+        try:
+            while True:
+                if page_token:
+                    params["page_token"] = page_token
+
+                resp = requests.get(url, headers=headers, params=params)
+
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("code") == 0:
+                        record_data = data.get("data", {})
+                        items = record_data.get("items", [])
+                        all_records.extend(items)
+
+                        has_more = record_data.get("has_more", False)
+                        if not has_more:
+                            break
+
+                        page_token = record_data.get("page_token")
+                        print(f"   📄 已获取 {len(all_records)} 条记录，继续获取...")
+                    else:
+                        print(f"❌ 查询记录失败: {data.get('msg')}")
+                        return False
+                else:
+                    print(f"❌ 请求失败: {resp.text}")
+                    return False
+
+        except Exception as e:
+            print(f"❌ 查询记录时出错: {e}")
+            return False
+
+        # 获取字段信息
+        fields_info = self._get_fields_info()
+
+        # 显示记录
+        if not all_records:
+            print("📭 该表格暂无记录")
+            return True
+
+        print(f"✅ 成功获取到 {len(all_records)} 条记录:")
+        print()
+
+        # 显示每条记录
+        for idx, record in enumerate(all_records, 1):
+            record_id = record.get("record_id")
+            fields = record.get("fields", {})
+
+            print(f"📌 记录 #{idx} [ID: {record_id}]")
+
+            # 显示字段值
+            for field_name, field_value in fields.items():
+                # 查找字段类型
+                field_type = None
+                for field in fields_info:
+                    if field.get("field_name") == field_name:
+                        field_type = field.get("type")
+                        break
+
+                formatted_value = self.format_field_value(field_type, field_value)
+                print(f"   {field_name}: {formatted_value}")
+
+            print()
+
+        print(f"📊 总计: {len(all_records)} 条记录")
+        return True
+
+    def _get_fields_info(self):
+        """获取字段信息(内部方法)"""
+        token = self.get_tenant_token()
+        if not token:
+            return []
+
+        url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}/tables/{self.table_id}/fields"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+
+        all_fields = []
+        page_token = None
+        params = {"page_size": 100}
+
+        try:
+            while True:
+                if page_token:
+                    params["page_token"] = page_token
+
+                resp = requests.get(url, headers=headers, params=params)
+
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("code") == 0:
+                        field_data = data.get("data", {})
+                        items = field_data.get("items", [])
+                        all_fields.extend(items)
+
+                        has_more = field_data.get("has_more", False)
+                        if not has_more:
+                            break
+
+                        page_token = field_data.get("page_token")
+                    else:
+                        break
+                else:
+                    break
+
+        except Exception:
+            pass
+
+        return all_fields
+
+    def get_metadata(self):
+        """获取多维表格元数据"""
+        token = self.get_tenant_token()
+        if not token:
+            return False
+
+        url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{self.app_token}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+
+        try:
+            resp = requests.get(url, headers=headers)
+
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("code") == 0:
+                    app_info = data.get("data", {}).get("app", {})
+
+                    print("📋 多维表格元数据:")
+                    print(f"   App Token: {app_info.get('app_token')}")
+                    print(f"   名称: {app_info.get('name')}")
+                    print(f"   版本号: {app_info.get('revision')}")
+                    print(f"   高级权限: {'是' if app_info.get('is_advanced') else '否'}")
+                    print(f"   时区: {app_info.get('time_zone')}")
+                    print()
+
+                    return app_info
+                else:
+                    print(f"❌ 获取元数据失败: {data.get('msg')}")
+                    print(f"   错误码: {data.get('code')}")
+                    return False
+            else:
+                print(f"❌ 请求失败: {resp.text}")
+                return False
+
+        except Exception as e:
+            print(f"❌ 获取元数据时出错: {e}")
+            return False
+
     def get_field_type_name(self, field_type):
         """获取字段类型的中文名称"""
         type_mapping = {
@@ -268,7 +569,9 @@ def main():
     lister = FeishuFieldLister()
 
     # 检查命令行参数
+    metadata_mode = "--metadata" in sys.argv
     export_mode = "--export" in sys.argv
+    query_mode = "--query" in sys.argv
     page_size = 20
 
     # 解析page_size参数
@@ -280,7 +583,13 @@ def main():
                 print("❌ page_size 必须是数字")
                 return
 
-    if export_mode:
+    if metadata_mode:
+        # 获取元数据模式
+        lister.get_metadata()
+    elif query_mode:
+        # 查询记录模式
+        lister.query_records(page_size=page_size)
+    elif export_mode:
         # 导出模式
         lister.export_fields_json()
     else:
